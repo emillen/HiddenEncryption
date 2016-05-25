@@ -14,7 +14,26 @@ import java.util.Collections;
 public class Hiddec {
 
     public static void main(String[] args) {
+        if(args.length != 3){
+            System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>");
+            return;
+        }
 
+        try{
+            Hiddec hiddec = new Hiddec();
+
+            hiddec.decrypt(args[0], args[1], args[2]);
+
+        } catch(FileNotFoundException e) {
+
+            System.out.println("one of the files were not found");
+        } catch(IOException e){
+
+            System.out.println("Something went wrong with IO. Do you own all of the files?");
+        } catch(IncorrectKeyException e){
+
+            System.out.println("The seems to not work");
+        }
     }
 
 
