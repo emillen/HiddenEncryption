@@ -1,10 +1,8 @@
-import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,11 +20,8 @@ public class Hiddec {
             return;
         }
 
-
-
         try{
             Hiddec hiddec = new Hiddec();
-
             hiddec.decrypt(args[0], args[1], args[2]);
 
         } catch(IOException e){
@@ -51,10 +46,10 @@ public class Hiddec {
     public void decrypt(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
-        byte[] input = getFileContents(inputFile);decrypt(getFileContents(inputFile), key);
+        byte[] input = decrypt(getFileContents(inputFile), key);
         byte[] hashedKey = hash(getFileContents(keyFile));
 
-        System.out.println(HexBin.encode(hashedKey));
+        System.out.println(new String(input, "UTF-8"));
         System.out.println(key.length + "\n");
         byte[] data = data(input, hashedKey);
         if (data == null)
@@ -161,7 +156,7 @@ public class Hiddec {
         if ((start = findIndexOfData(input, hashedKey)) == -1)
             return null;
 
-
+        System.out.println("Hamnade jag här?");
 
         start += hashedKey.length;
 
