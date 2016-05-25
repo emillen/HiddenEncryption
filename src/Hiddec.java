@@ -1,13 +1,16 @@
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 
+
 public class Hiddec {
 
     public static void main(String[] args) {
-
 
     }
 
@@ -24,7 +27,8 @@ public class Hiddec {
      */
     public void decrypt(String inputFile, String outputFile, String keyFile) throws FileNotFoundException, IOException, IncorrectKeyException {
 
-        byte[] input = decrypt(getFileContents(inputFile));
+        byte[] key = getFileContents(keyFile);
+        byte[] input = decrypt(getFileContents(inputFile), key);
         byte[] hashedKey = hash(getFileContents(keyFile));
 
 
@@ -52,19 +56,37 @@ public class Hiddec {
         } catch (Exception e) {
             System.out.println("Error: Program shouldnt break here, but for some reason the hash algorithm does not excist");
             System.exit(0);
-            return null;
         }
+        return null;  // Dont think it should get here really
+    }
+
+    private String data() {
+
+
+        return null;
     }
 
     /**
      * Decrypts the input bytes
      *
      * @param inputBytes the bytes to be decrypted
+     * @param key        the bytes in the key
      * @return decrypted bytes
      */
-    private byte[] decrypt(byte[] inputBytes) {
+    private byte[] decrypt(byte[] inputBytes, byte[] key) {
 
-        return null;
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            SecretKey secretKey = new SecretKeySpec(key, "AES");
+            cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            return cipher.doFinal();
+        } catch (Exception e) {
+
+            System.out.println("Stuff went wrong, bye friend, have a good life");
+            System.exit(0);
+        }
+
+        return null;  // Probably will never get here
     }
 
 
