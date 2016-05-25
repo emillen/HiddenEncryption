@@ -5,6 +5,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -61,6 +62,7 @@ public class Hiddec {
             System.out.println(new String(decrypted, "UTF-8"));
             printToFile(decrypted, outputFile);
         }
+
 
     }
 
@@ -207,7 +209,7 @@ public class Hiddec {
      */
     private int findIndexOfData(byte[] large, byte[] small) {
 
-        return Collections.indexOfSubList(Arrays.asList(large), Arrays.asList(small));
+        return Arrays.toString(large).indexOf(Arrays.toString(small).replace("]", "").replace("[", ""));
     }
 
     private class IncorrectKeyException extends Exception {
