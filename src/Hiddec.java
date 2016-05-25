@@ -24,7 +24,6 @@ public class Hiddec {
             hiddec.decryptFile(args[0], args[1], args[2]);
 
         } catch (IOException e) {
-
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch (IncorrectKeyException e) {
             e.printStackTrace();
@@ -42,7 +41,7 @@ public class Hiddec {
      * @throws IOException           when something went wrong with reading the files
      * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    void decryptFile(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
+    private void decryptFile(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
         byte[] input = decrypt(getFileContents(inputFile), key);
