@@ -5,30 +5,28 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Collections;
 
 
 public class Hiddec {
 
     public static void main(String[] args) {
-        if(args.length != 3){
+        if (args.length != 3) {
             System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>");
             return;
         }
 
-        try{
+        try {
             Hiddec hiddec = new Hiddec();
-            hiddec.decrypt(args[0], args[1], args[2]);
+            hiddec.decryptFile(args[0], args[1], args[2]);
 
-        } catch(IOException e){
+        } catch (IOException e) {
 
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
-        } catch(IncorrectKeyException e){
+        } catch (IncorrectKeyException e) {
             e.printStackTrace();
             System.out.println("The seems to not work");
         }
@@ -44,7 +42,7 @@ public class Hiddec {
      * @throws IOException           when something went wrong with reading the files
      * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    public void decrypt(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
+    void decryptFile(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
         byte[] input = decrypt(getFileContents(inputFile), key);
@@ -54,7 +52,7 @@ public class Hiddec {
         System.out.println(key.length + "\n");
         byte[] data = data(input, hashedKey);
         if (data == null)
-            throw new IncorrectKeyException("Could not decrypt file");
+            throw new IncorrectKeyException("Could not decryptFile file");
         byte[] decrypted = decrypt(data, key);
 
 
@@ -78,18 +76,33 @@ public class Hiddec {
         return Arrays.equals(hash(decrypted), hOfData);
     }
 
+
+    /**
+     * Reads a file with hex-numbers and returns a byte array representing that file
+     *
+     * @param file the name of the file to read
+     * @return a byte array of hex numbers
+     * @throws IOException when the file could not be read
+     */
     private byte[] hexFileToArray(String file) throws IOException {
 
-        String hexString = new String(getFileContents(file) , "UTF-8");
+        String hexString = new String(getFileContents(file), "UTF-8");
         return hexStringToByteArray(hexString);
     }
 
+
+    /**
+     * takes an hex-string, and returns an byte array representing that hex string
+     *
+     * @param s the hex-string
+     * @return a byte-array
+     */
     private static byte[] hexStringToByteArray(String s) {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len - 1; i += 2) {
             data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
+                    + Character.digit(s.charAt(i + 1), 16));
         }
 
         return data;
@@ -100,7 +113,7 @@ public class Hiddec {
      *
      * @param file the name of the file to be read
      * @return a byte array with all the bytes in the file
-     * @throws IOException           when something went wrong with the input
+     * @throws IOException when something went wrong with the input
      */
     private byte[] getFileContents(String file) throws IOException {
 
@@ -112,7 +125,7 @@ public class Hiddec {
      *
      * @param data       the byte array to print
      * @param outPutFile the file to print to
-     * @throws IOException           when something went wrong with the output
+     * @throws IOException when something went wrong with the output
      */
     private void printToFile(byte[] data, String outPutFile) throws IOException {
 
@@ -186,7 +199,7 @@ public class Hiddec {
         byte[] decrypted = null;
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "SunJCE");
-            SecretKey secretKey = new SecretKeySpec(key,"AES");
+            SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
             decrypted = cipher.doFinal(inputBytes);
             System.out.println(HexBin.encode(decrypted));
