@@ -1,7 +1,6 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,14 +39,29 @@ public class Hiddec {
 
     }
 
-
+    /**
+     * Returns all the bytes from a file
+     *
+     * @param file the name of the file to be read
+     * @return a byte array with all the bytes in the file
+     * @throws FileNotFoundException when the file is not found
+     * @throws IOException           when something went wrong with the input
+     */
     private byte[] getFileContents(String file) throws FileNotFoundException, IOException {
 
         return Files.readAllBytes(Paths.get(file));
 
     }
 
-    private void printToFile(byte[] data, String outPutFile)throws FileNotFoundException, IOException{
+    /**
+     * prints a bytearray to a file
+     *
+     * @param data       the byte array to print
+     * @param outPutFile the file to print to
+     * @throws FileNotFoundException when the file is not found
+     * @throws IOException           when something went wrong with the output
+     */
+    private void printToFile(byte[] data, String outPutFile) throws FileNotFoundException, IOException {
 
         FileOutputStream out = new FileOutputStream(outPutFile);
         out.write(data);
