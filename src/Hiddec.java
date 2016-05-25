@@ -141,16 +141,17 @@ public class Hiddec {
      */
     private byte[] hash(byte[] inputBytes) {
         MessageDigest md;
+        byte[] hash = null;
         try {
             md = MessageDigest.getInstance("MD5");
             md.update(inputBytes);
-            return md.digest();
+            hash = md.digest();
 
         } catch (Exception e) {
             System.out.println("Error: Program shouldnt break here, but for some reason the hash algorithm does not excist");
             System.exit(0);
         }
-        return null;  // Dont think it should get here really
+        return hash;
     }
 
     /**
@@ -208,7 +209,7 @@ public class Hiddec {
             System.exit(0);
         }
 
-        return decrypted;  // Probably will never get here
+        return decrypted;
     }
 
 
