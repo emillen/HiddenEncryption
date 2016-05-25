@@ -28,12 +28,9 @@ public class Hiddec {
 
             hiddec.decrypt(args[0], args[1], args[2]);
 
-        } catch(FileNotFoundException e) {
-
-            System.out.println("one of the files were not found");
         } catch(IOException e){
 
-            System.out.println("Something went wrong with IO. Do you own all of the files?");
+            System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch(IncorrectKeyException e){
 
             System.out.println("The seems to not work");
@@ -47,11 +44,10 @@ public class Hiddec {
      * @param inputFile  the input file
      * @param outputFile the output file to save the decrypted data in
      * @param keyFile    the file containing the key
-     * @throws FileNotFoundException when one of the files does not exist
      * @throws IOException           when something went wrong with reading the files
      * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    public void decrypt(String inputFile, String outputFile, String keyFile) throws FileNotFoundException, IOException, IncorrectKeyException {
+    public void decrypt(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
         byte[] input = decrypt(getFileContents(inputFile), key);
@@ -63,6 +59,8 @@ public class Hiddec {
         if (data == null)
             throw new IncorrectKeyException("Could not decrypt file");
         byte[] decrypted = decrypt(data, key);
+
+        System.out.println(new String(input, "UTF-8"));
 
         if (verify(decrypted, input)) {
             System.out.println(decrypted);
@@ -105,10 +103,9 @@ public class Hiddec {
      *
      * @param file the name of the file to be read
      * @return a byte array with all the bytes in the file
-     * @throws FileNotFoundException when the file is not found
      * @throws IOException           when something went wrong with the input
      */
-    private byte[] getFileContents(String file) throws FileNotFoundException, IOException {
+    private byte[] getFileContents(String file) throws IOException {
 
         return Files.readAllBytes(Paths.get(file));
     }
@@ -118,10 +115,9 @@ public class Hiddec {
      *
      * @param data       the byte array to print
      * @param outPutFile the file to print to
-     * @throws FileNotFoundException when the file is not found
      * @throws IOException           when something went wrong with the output
      */
-    private void printToFile(byte[] data, String outPutFile) throws FileNotFoundException, IOException {
+    private void printToFile(byte[] data, String outPutFile) throws IOException {
 
         FileOutputStream out = new FileOutputStream(outPutFile);
         out.write(data);
