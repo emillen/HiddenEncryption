@@ -1,7 +1,9 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -31,13 +33,25 @@ public class Hiddec {
         byte[] input = decrypt(getFileContents(inputFile), key);
         byte[] hashedKey = hash(getFileContents(keyFile));
 
+        byte[] data = data(input, hashedKey);
+        if (data == null)
+            throw new IncorrectKeyException("Could not decrypt file");
+        printToFile(data, outputFile);
 
     }
+
 
     private byte[] getFileContents(String file) throws FileNotFoundException, IOException {
 
         return Files.readAllBytes(Paths.get(file));
 
+    }
+
+    private void printToFile(byte[] data, String outPutFile)throws FileNotFoundException, IOException{
+
+        FileOutputStream out = new FileOutputStream(outPutFile);
+        out.write(data);
+        out.close();
     }
 
     /**
@@ -60,7 +74,7 @@ public class Hiddec {
         return null;  // Dont think it should get here really
     }
 
-    private String data() {
+    private byte[] data(byte[] input, byte[] hashedKey) {
 
 
         return null;
@@ -104,7 +118,7 @@ public class Hiddec {
 
     private class IncorrectKeyException extends Exception {
 
-        public IncorrectKeyException(String s) {
+        IncorrectKeyException(String s) {
             super(s);
         }
     }
