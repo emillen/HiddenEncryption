@@ -37,8 +37,25 @@ public class Hiddec {
         byte[] data = data(input, hashedKey);
         if (data == null)
             throw new IncorrectKeyException("Could not decrypt file");
-        printToFile(data, outputFile);
+        byte[] decrypted = decrypt(data, key);
 
+        if (verify(decrypted, input)) {
+            System.out.println(decrypted);
+            printToFile(decrypted, outputFile);
+        }
+
+    }
+
+    /**
+     * Checks if the hash of decrypted is the same as hOfData
+     *
+     * @param decrypted the array to hash
+     * @param hOfData   the value to verify
+     * @return true if same, else false
+     */
+    private boolean verify(byte[] decrypted, byte[] hOfData) {
+
+        return hash(decrypted).equals(hOfData);
     }
 
     /**
@@ -92,6 +109,8 @@ public class Hiddec {
 
     /**
      * Returns the data in between two sections containing the hashed key
+     * A side effect is that the input array is shortened to the last part
+     * that contains the H(data)
      *
      * @param input     the input to search in
      * @param hashedKey the hashed key
@@ -106,10 +125,16 @@ public class Hiddec {
         if ((start = findIndexOfData(input, hashedKey)) == -1)
             return null;
 
+        start += hashedKey.length;
+
         data = Arrays.copyOfRange(input, start, input.length);
 
         if ((stop = findIndexOfData(input, hashedKey)) == -1)
             return null;
+
+        input = Arrays.copyOfRange(input, stop, input.length);
+
+        stop -= 1;
 
         return Arrays.copyOfRange(data, 0, stop);
     }
@@ -156,4 +181,6 @@ public class Hiddec {
             super(s);
         }
     }
+
+
 }
