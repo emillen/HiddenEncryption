@@ -20,8 +20,9 @@ public class Hiddec {
      * @param keyFile    the file containing the key
      * @throws FileNotFoundException when one of the files does not exist
      * @throws IOException           when something went wrong with reading the files
+     * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    public void decrypt(String inputFile, String outputFile, String keyFile) throws FileNotFoundException, IOException {
+    public void decrypt(String inputFile, String outputFile, String keyFile) throws FileNotFoundException, IOException, IncorrectKeyException {
 
         byte[] input = getFileContents(inputFile);
         byte[] hashedKey = hash(getFileContents(keyFile));
@@ -65,5 +66,12 @@ public class Hiddec {
     private int findIndexOfData(byte[] large, byte[] small) {
 
         return -1;
+    }
+
+    private class IncorrectKeyException extends Exception{
+
+        public IncorrectKeyException(String s) {
+            super(s);
+        }
     }
 }
