@@ -24,7 +24,7 @@ public class Hiddec {
      */
     public void decrypt(String inputFile, String outputFile, String keyFile) throws FileNotFoundException, IOException, IncorrectKeyException {
 
-        byte[] input = getFileContents(inputFile);
+        byte[] input = decrypt(getFileContents(inputFile));
         byte[] hashedKey = hash(getFileContents(keyFile));
 
 
@@ -36,6 +36,12 @@ public class Hiddec {
 
     }
 
+    /**
+     * Hashses the input bytes using MD5
+     *
+     * @param inputBytes the bytes to hash
+     * @return hashed bytes
+     */
     private byte[] hash(byte[] inputBytes) {
         MessageDigest md;
         try {
@@ -50,7 +56,13 @@ public class Hiddec {
         }
     }
 
-    private byte[] decrypt() {
+    /**
+     * Decrypts the input bytes
+     *
+     * @param inputBytes the bytes to be decrypted
+     * @return decrypted bytes
+     */
+    private byte[] decrypt(byte[] inputBytes) {
 
         return null;
     }
@@ -68,7 +80,7 @@ public class Hiddec {
         return -1;
     }
 
-    private class IncorrectKeyException extends Exception{
+    private class IncorrectKeyException extends Exception {
 
         public IncorrectKeyException(String s) {
             super(s);
