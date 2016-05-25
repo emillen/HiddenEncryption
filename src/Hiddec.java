@@ -1,3 +1,4 @@
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
 import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 
 import javax.crypto.Cipher;
@@ -32,7 +33,7 @@ public class Hiddec {
 
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch(IncorrectKeyException e){
-
+            e.printStackTrace();
             System.out.println("The seems to not work");
         }
     }
@@ -50,20 +51,19 @@ public class Hiddec {
     public void decrypt(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
-        byte[] input = decrypt(getFileContents(inputFile), key);
+        byte[] input = getFileContents(inputFile);decrypt(getFileContents(inputFile), key);
         byte[] hashedKey = hash(getFileContents(keyFile));
 
-        System.out.println(HexBin.encode(key));
+        System.out.println(HexBin.encode(hashedKey));
         System.out.println(key.length + "\n");
         byte[] data = data(input, hashedKey);
         if (data == null)
             throw new IncorrectKeyException("Could not decrypt file");
         byte[] decrypted = decrypt(data, key);
 
-        System.out.println(new String(input, "UTF-8"));
 
         if (verify(decrypted, input)) {
-            System.out.println(decrypted);
+            System.out.println(new String(decrypted, "UTF-8"));
             printToFile(decrypted, outputFile);
         }
 
@@ -158,9 +158,10 @@ public class Hiddec {
         int stop = 0;
         byte[] data = null;
 
-
         if ((start = findIndexOfData(input, hashedKey)) == -1)
             return null;
+
+
 
         start += hashedKey.length;
 
@@ -185,18 +186,20 @@ public class Hiddec {
      */
     private byte[] decrypt(byte[] inputBytes, byte[] key) {
 
+        byte[] decrypted = null;
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "SunJCE");
-            SecretKey secretKey = new SecretKeySpec(Arrays.copyOfRange(key, 0, key.length),"AES");
+            SecretKey secretKey = new SecretKeySpec(key,"AES");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
-            return cipher.doFinal();
+            decrypted = cipher.doFinal(inputBytes);
+            System.out.println(HexBin.encode(decrypted));
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Stuff went wrong, bye friend, have a good life");
             System.exit(0);
         }
 
-        return null;  // Probably will never get here
+        return decrypted;  // Probably will never get here
     }
 
 
