@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Collections;
 
 
 public class Hiddec {
@@ -88,10 +90,28 @@ public class Hiddec {
         return null;  // Dont think it should get here really
     }
 
+    /**
+     * Returns the data in between two sections containing the hashed key
+     *
+     * @param input     the input to search in
+     * @param hashedKey the hashed key
+     * @return null if data could not be found, else the data
+     */
     private byte[] data(byte[] input, byte[] hashedKey) {
+        int start = 0;
+        int stop = 0;
+        byte[] data = null;
 
 
-        return null;
+        if ((start = findIndexOfData(input, hashedKey)) == -1)
+            return null;
+
+        data = Arrays.copyOfRange(input, start, input.length);
+
+        if ((stop = findIndexOfData(input, hashedKey)) == -1)
+            return null;
+
+        return Arrays.copyOfRange(data, 0, stop);
     }
 
     /**
@@ -127,7 +147,7 @@ public class Hiddec {
      */
     private int findIndexOfData(byte[] large, byte[] small) {
 
-        return -1;
+        return Collections.indexOfSubList(Arrays.asList(large), Arrays.asList(small));
     }
 
     private class IncorrectKeyException extends Exception {
