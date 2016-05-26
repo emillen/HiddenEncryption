@@ -44,14 +44,12 @@ public class Hiddec {
         byte[] input = decrypt(getFileContents(inputFile), key);
         byte[] hashedKey = hash(key);
 
-        int length = input.length;
-
         Data data = new Data(input, hashedKey);
 
         if (data.data == null)
             throw new IncorrectKeyException("Could not decryptFile file");
 
-        if (verify(data.data, decrypt(data.hashOfData, key))) {
+        if (verify(data.data, data.hashOfData)) {
             System.out.println(new String(data.data, "UTF-8"));
             printToFile(data.data, outputFile);
         } else {
@@ -68,10 +66,7 @@ public class Hiddec {
      * @return true if same, else false
      */
     private boolean verify(byte[] decrypted, byte[] hOfData) {
-        try {
-            System.out.println(new String(decrypted, "UTF-8"));
-        } catch (Exception e) {
-        }
+
         byte[] hash = hash(decrypted);
         return Arrays.equals(hash, hOfData);
     }
@@ -223,7 +218,6 @@ public class Hiddec {
             int start;
             int stop;
             byte[] data;
-
 
             // find starting position
             if ((start = indexOf(input, hashedKey)) == -1)
