@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Random;
 
 /**
  * Created by daseel on 2016-05-26.
@@ -18,11 +19,11 @@ public class Hidenc {
             System.out.println("Usage: Hidenc <datafile> <keyfile> <offsetfile> <savefile>");
             return;
         }
-        try{
+        try {
             Hidenc hidenc = new Hidenc();
             hidenc.encryptToFile(args[0], args[1], args[2]);
-        } catch(Exception e) {
-
+        } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("Tfw stuff dont work");
         }
     }
@@ -40,12 +41,30 @@ public class Hidenc {
     private byte[] buildResult(byte[] blob, byte[] key, int offset) {
 
         byte[] result = new byte[1024];
+        byte[] keyHash = hash(key);
 
-
+        copyTo(result, blob, offset);
+        copyTo(result, keyHash, offset - keyHash.length);
+        copyTo(result, keyHash, offset + blob.length);
+        pad(result, 0, offset-keyHash.length);
+        pad(result, offset + blob.length, result.length);
+        return result;
     }
 
-    private void pad(){
+    private void copyTo(byte[] large, byte[] small, int start) {
 
+        for (int i = start, j = 0; i < start + small.length; i++, j++)
+            large[i] = small[j];
+    }
+
+    private void pad(byte[] blob, int start, int stop) {
+
+        Random random = new Random();
+
+        for(int i = start; i < stop; i++){
+            byte rnd = (byte) random.nextInt();
+            blob[i] = rnd;
+        }
 
     }
 
