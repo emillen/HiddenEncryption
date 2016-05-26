@@ -1,5 +1,6 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -12,22 +13,25 @@ public class Hiddec {
 
     public static void main(String[] args) {
 
-        if (args.length != 3) {
-            System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>");
+        if (!(args.length == 3 || args.length == 4)) {
+            System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>  <ctrFile>");
             return;
         }
 
         try {
             Hiddec hiddec = new Hiddec();
-            hiddec.decryptFile(args[0], args[1], args[2]);
-
+            if (args.length == 4)
+                hiddec.decryptFile(args[0], args[1], args[2], args[3]);
+            hiddec.decryptFile(args[0], args[1], args[2], null);
         } catch (IOException e) {
+            e.printStackTrace();
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch (IncorrectKeyException e) {
             e.printStackTrace();
             System.out.println("The seems to not work");
         }
     }
+
 
     /**
      * Decrypts the data file and returns its values
@@ -38,11 +42,13 @@ public class Hiddec {
      * @throws IOException           when something went wrong with reading the files
      * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    private void decryptFile(String inputFile, String outputFile, String keyFile) throws IOException, IncorrectKeyException {
+    private void decryptFile(String inputFile, String outputFile, String keyFile, String CTRFile) throws IOException, IncorrectKeyException {
 
         byte[] key = hexFileToArray(keyFile);
-        byte[] input = decrypt(getFileContents(inputFile), key);
+        byte[] CTR = hexFileToArray(CTRFile);
+        byte[] input = decrypt(getFileContents(inputFile), key, CTR);
         byte[] hashedKey = hash(key);
+
 
         Data data = new Data(input, hashedKey);
 
@@ -80,6 +86,7 @@ public class Hiddec {
      * @throws IOException when the file could not be read
      */
     private byte[] hexFileToArray(String file) throws IOException {
+        if (file == null) return null;
 
         String hexString = new String(getFileContents(file), "UTF-8");
         return hexStringToByteArray(hexString);
@@ -159,13 +166,21 @@ public class Hiddec {
      * @param key        the bytes in the key
      * @return decrypted bytes
      */
-    private byte[] decrypt(byte[] inputBytes, byte[] key) {
+    private byte[] decrypt(byte[] inputBytes, byte[] key, byte[] CTR) {
 
         byte[] decrypted = null;
         try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            Cipher cipher;
             SecretKey secretKey = new SecretKeySpec(key, "AES");
-            cipher.init(Cipher.DECRYPT_MODE, secretKey);
+            if (CTR == null) {
+                cipher = Cipher.getInstance("AES/ECB/NoPadding");
+                cipher.init(Cipher.DECRYPT_MODE, secretKey);
+
+            } else {
+                cipher = Cipher.getInstance("AES/CTR/NoPadding");
+                IvParameterSpec ivSpec = new IvParameterSpec(CTR);
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+            }
 
             decrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
@@ -210,9 +225,12 @@ public class Hiddec {
             int stop;
             byte[] data;
 
+            System.out.println("Did you get here, mofo");
             // find starting position
             if ((start = indexOf(input, hashedKey)) == -1)
                 return null;
+
+            System.out.println("Did you get here");
 
             data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
 
