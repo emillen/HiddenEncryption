@@ -51,7 +51,7 @@ public class Hiddec {
         if (data.data == null)
             throw new IncorrectKeyException("Could not decryptFile file");
 
-        if (verify(data.data, data.hashOfData)) {
+        if (verify(data.data, decrypt(data.hashOfData, key))) {
             System.out.println(new String(data.data, "UTF-8"));
             printToFile(data.data, outputFile);
         } else {
@@ -68,8 +68,12 @@ public class Hiddec {
      * @return true if same, else false
      */
     private boolean verify(byte[] decrypted, byte[] hOfData) {
-
-        return Arrays.equals(hash(decrypted), hOfData);
+        try {
+            System.out.println(new String(decrypted, "UTF-8"));
+        } catch (Exception e) {
+        }
+        byte[] hash = hash(decrypted);
+        return Arrays.equals(hash, hOfData);
     }
 
 
@@ -168,7 +172,6 @@ public class Hiddec {
             SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
-            System.out.println((float) inputBytes.length / 16);
             decrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
             e.printStackTrace();
@@ -221,35 +224,64 @@ public class Hiddec {
             int stop;
             byte[] data;
 
+
             // find starting position
-            if ((start = findIndexOfData(input, hashedKey)) == -1)
+            if ((start = indexOf(input, hashedKey)) == -1)
                 return null;
 
             data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
 
             // find stop position
-            if ((stop = findIndexOfData(data, hashedKey)) == -1)
+            if ((stop = indexOf(data, hashedKey)) == -1)
                 return null;
 
             // the last part of the input
             hashOfData = Arrays.copyOfRange(data, stop + hashedKey.length, data.length);
+            hashOfData = Arrays.copyOfRange(hashOfData, 0, 16);
 
+            return Arrays.copyOfRange(data, 0, stop);
+        }
 
-            return Arrays.copyOfRange(data, 0, stop - 1);
+        private int indexOf(byte[] data, byte[] pattern) {
+            int[] failure = computeFailure(pattern);
+
+            int j = 0;
+            if (data.length == 0) return -1;
+
+            for (int i = 0; i < data.length; i++) {
+                while (j > 0 && pattern[j] != data[i]) {
+                    j = failure[j - 1];
+                }
+                if (pattern[j] == data[i]) {
+                    j++;
+                }
+                if (j == pattern.length) {
+                    return i - pattern.length + 1;
+                }
+            }
+            return -1;
         }
 
         /**
-         * Finds the index of the data inside the blob
-         *
-         * @param large the large array to search in
-         * @param small the small array to find inside the large array
-         * @return -1 if not found, or the index if it found
+         * Computes the failure function using a boot-strapping process,
+         * where the pattern is matched against itself.
          */
-        private int findIndexOfData(byte[] large, byte[] small) {
-            String bigStr = new String(large);
-            String smallStr = new String(small);
+        private int[] computeFailure(byte[] pattern) {
+            int[] failure = new int[pattern.length];
 
-            return bigStr.indexOf(smallStr);
+            int j = 0;
+            for (int i = 1; i < pattern.length; i++) {
+                while (j > 0 && pattern[j] != pattern[i]) {
+                    j = failure[j - 1];
+                }
+                if (pattern[j] == pattern[i]) {
+                    j++;
+                }
+                failure[i] = j;
+            }
+
+            return failure;
         }
+
     }
 }
