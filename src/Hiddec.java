@@ -223,18 +223,13 @@ public class Hiddec {
 
             data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
 
-            if ((stop = findIndexOfData(input, hashedKey)) == -1)
+            if ((stop = findIndexOfData(data, hashedKey)) == -1)
                 return null;
 
 
-            hashOfData = Arrays.copyOfRange(input, stop + hashedKey.length, input.length);
+            hashOfData = Arrays.copyOfRange(data, stop + hashedKey.length, input.length);
 
-            try {
-                System.out.println(new String(Arrays.copyOfRange(input, stop, stop + hashedKey.length), "UTF-8"));
-                System.out.println(new String(hashedKey, "UTF-8"));
-            } catch (Exception e){
-                System.out.println("Hora");
-            }
+
             return Arrays.copyOfRange(data, 0, stop - 1);
         }
 
