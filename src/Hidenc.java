@@ -47,7 +47,7 @@ public class Hidenc {
         copyTo(result, keyHash, offset);
         copyTo(result, data, offset + keyHash.length);
         copyTo(result, keyHash, offset + keyHash.length + data.length);
-        copyTo(result, data, offset + keyHash.length * 2 + data.length);
+        copyTo(result, dataHash, offset + keyHash.length * 2 + data.length);
         pad(result, 0, offset);
         pad(result, offset + keyHash.length * 2 + data.length + dataHash.length, result.length);
 
