@@ -11,44 +11,65 @@ import java.util.Arrays;
 
 public class Hiddec {
 
-    public static void main(String[] args) {
+    private String key, ctr, inputFile, outputFile;
 
-        if (!(args.length == 3 || args.length == 4)) {
-            System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>  <ctrFile>");
-            return;
-        }
+    public static void main(String[] args) {
 
         try {
             Hiddec hiddec = new Hiddec();
-            if (args.length == 4)
-                hiddec.decryptFile(args[0], args[1], args[2], args[3]);
-            hiddec.decryptFile(args[0], args[1], args[2], null);
+            hiddec.getArgs(args);
+            hiddec.decryptFile();
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch (IncorrectKeyException e) {
             e.printStackTrace();
             System.out.println("The seems to not work");
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
         }
     }
 
 
+    private void getArgs(String[] args) throws IllegalArgumentException {
+        if ((key = getArg(args, "--key=")) == null)
+            throw new IllegalArgumentException("Key is not set");
+
+        if ((ctr = getArg(args, "--ctr=")) == null)
+            throw new IllegalArgumentException("ctr is not set");
+
+        if ((inputFile = getArg(args, "--input=")) == null)
+            throw new IllegalArgumentException("input file is not set");
+
+        if ((outputFile = getArg(args, "--output=")) == null)
+            throw new IllegalArgumentException("output file is not set");
+    }
+
+    private String getArg(String[] args, String string) {
+
+        for (String s : args) {
+            if (s.startsWith(string))
+                return s.replaceAll(string, "");
+
+        }
+
+        return null;
+    }
+
     /**
-     * Decrypts the data file and returns its values
+     * Decrypts, and prints, the data file
      *
-     * @param inputFile  the input file
-     * @param outputFile the output file to save the decrypted data in
-     * @param keyFile    the file containing the key
      * @throws IOException           when something went wrong with reading the files
      * @throws IncorrectKeyException when the file could not be decrypted (probs wrong key haha)
      */
-    private void decryptFile(String inputFile, String outputFile, String keyFile, String CTRFile) throws IOException, IncorrectKeyException {
+    private void decryptFile() throws IOException, IncorrectKeyException {
 
-        byte[] key = hexFileToArray(keyFile);
-        byte[] CTR = hexFileToArray(CTRFile);
+        byte[] key = hexStringToByteArray(this.key);
+        byte[] CTR = hexStringToByteArray(ctr);
         byte[] input = decrypt(getFileContents(inputFile), key, CTR);
         byte[] hashedKey = hash(key);
 
+        System.out.println(new String(input, "UTF-8"));
 
         Data data = new Data(input, hashedKey);
 
@@ -182,13 +203,13 @@ public class Hiddec {
                 cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
             }
 
+
             decrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Decryption is broken");
             System.exit(0);
         }
-
         return decrypted;
     }
 
@@ -225,12 +246,11 @@ public class Hiddec {
             int stop;
             byte[] data;
 
-            System.out.println("Did you get here, mofo");
+
             // find starting position
             if ((start = indexOf(input, hashedKey)) == -1)
                 return null;
 
-            System.out.println("Did you get here");
 
             data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
 
