@@ -11,6 +11,7 @@ import java.util.Arrays;
 public class Hiddec {
 
     public static void main(String[] args) {
+
         if (args.length != 3) {
             System.out.println("Usage:\nHiddec: <inputFile> <outputFile> <keyFile>");
             return;
@@ -49,12 +50,13 @@ public class Hiddec {
 
         if (data.data == null)
             throw new IncorrectKeyException("Could not decryptFile file");
-        byte[] decrypted = decrypt(data.data, key);
-        if (verify(decrypted, data.hashOfData)) {
 
-            System.out.println(length == input.length);
-            System.out.println(new String(decrypted, "UTF-8"));
-            printToFile(decrypted, outputFile);
+        if (verify(data.data, data.hashOfData)) {
+            System.out.println(new String(data.data, "UTF-8"));
+            printToFile(data.data, outputFile);
+        } else {
+
+            System.out.println("Could not be verified like a fgt boii");
         }
     }
 
@@ -143,7 +145,8 @@ public class Hiddec {
             hash = md.digest();
 
         } catch (Exception e) {
-            System.out.println("Error: Program shouldnt break here, but for some reason the hash algorithm does not excist");
+            System.out.println("Error: Program shouldnt break here, but " +
+                    "for some reason the hash algorithm does not excist");
             System.exit(0);
         }
         return hash;
@@ -161,7 +164,7 @@ public class Hiddec {
 
         byte[] decrypted = null;
         try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "SunJCE");
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
             SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
 
@@ -218,16 +221,18 @@ public class Hiddec {
             int stop;
             byte[] data;
 
+            // find starting position
             if ((start = findIndexOfData(input, hashedKey)) == -1)
                 return null;
 
             data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
 
+            // find stop position
             if ((stop = findIndexOfData(data, hashedKey)) == -1)
                 return null;
 
-
-            hashOfData = Arrays.copyOfRange(data, stop + hashedKey.length, input.length);
+            // the last part of the input
+            hashOfData = Arrays.copyOfRange(data, stop + hashedKey.length, data.length);
 
 
             return Arrays.copyOfRange(data, 0, stop - 1);
