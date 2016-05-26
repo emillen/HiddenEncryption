@@ -1,5 +1,3 @@
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
-
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -9,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.Arrays;
-
 
 public class Hiddec {
 
@@ -31,7 +28,6 @@ public class Hiddec {
         }
     }
 
-
     /**
      * Decrypts the data file and returns its values
      *
@@ -45,22 +41,21 @@ public class Hiddec {
 
         byte[] key = hexFileToArray(keyFile);
         byte[] input = decrypt(getFileContents(inputFile), key);
-        byte[] hashedKey = hash(getFileContents(keyFile));
+        byte[] hashedKey = hash(key);
 
-        System.out.println(new String(input, "UTF-8"));
-        System.out.println(key.length + "\n");
-        byte[] data = data(input, hashedKey);
-        if (data == null)
+        int length = input.length;
+
+        Data data = new Data(input, hashedKey);
+
+        if (data.data == null)
             throw new IncorrectKeyException("Could not decryptFile file");
-        byte[] decrypted = decrypt(data, key);
+        byte[] decrypted = decrypt(data.data, key);
+        if (verify(decrypted, data.hashOfData)) {
 
-
-        if (verify(decrypted, input)) {
+            System.out.println(length == input.length);
             System.out.println(new String(decrypted, "UTF-8"));
             printToFile(decrypted, outputFile);
         }
-
-
     }
 
     /**
@@ -154,38 +149,6 @@ public class Hiddec {
         return hash;
     }
 
-    /**
-     * Returns the data in between two sections containing the hashed key
-     * A side effect is that the input array is shortened to the last part
-     * that contains the H(data)
-     *
-     * @param input     the input to search in
-     * @param hashedKey the hashed key
-     * @return null if data could not be found, else the data
-     */
-    private byte[] data(byte[] input, byte[] hashedKey) {
-        int start = 0;
-        int stop = 0;
-        byte[] data = null;
-
-        if ((start = findIndexOfData(input, hashedKey)) == -1)
-            return null;
-
-        System.out.println("Hamnade jag här?");
-
-        start += hashedKey.length;
-
-        data = Arrays.copyOfRange(input, start, input.length);
-
-        if ((stop = findIndexOfData(input, hashedKey)) == -1)
-            return null;
-
-        input = Arrays.copyOfRange(input, stop, input.length);
-
-        stop -= 1;
-
-        return Arrays.copyOfRange(data, 0, stop);
-    }
 
     /**
      * Decrypts the input bytes
@@ -201,8 +164,9 @@ public class Hiddec {
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding", "SunJCE");
             SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.DECRYPT_MODE, secretKey);
+
+            System.out.println((float) inputBytes.length / 16);
             decrypted = cipher.doFinal(inputBytes);
-            System.out.println(HexBin.encode(decrypted));
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Stuff went wrong, bye friend, have a good life");
@@ -213,18 +177,6 @@ public class Hiddec {
     }
 
 
-    /**
-     * Finds the index of the data inside the blob
-     *
-     * @param large the large array to search in
-     * @param small the small array to find inside the large array
-     * @return -1 if not found, or the index if it found
-     */
-    private int findIndexOfData(byte[] large, byte[] small) {
-
-        return Arrays.toString(large).indexOf(Arrays.toString(small).replace("]", "").replace("[", ""));
-    }
-
     private class IncorrectKeyException extends Exception {
 
         IncorrectKeyException(String s) {
@@ -232,5 +184,72 @@ public class Hiddec {
         }
     }
 
+    private class Data {
 
+        private byte[] data;
+        private byte[] hashOfData;
+
+
+        Data(byte[] input, byte[] hashedKey) {
+
+            data = data(input, hashedKey);
+        }
+
+        byte[] getData() {
+            return data;
+        }
+
+        byte[] getHashOfData() {
+
+            return hashOfData;
+        }
+
+        /**
+         * Returns the data in between two sections containing the hashed key
+         * A side effect is that the input array is shortened to the last part
+         * that contains the H(data)
+         *
+         * @param input     the input to search in
+         * @param hashedKey the hashed key
+         * @return null if data could not be found, else the data
+         */
+        private byte[] data(byte[] input, byte[] hashedKey) {
+            int start;
+            int stop;
+            byte[] data;
+
+            if ((start = findIndexOfData(input, hashedKey)) == -1)
+                return null;
+
+            data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
+
+            if ((stop = findIndexOfData(input, hashedKey)) == -1)
+                return null;
+
+
+            hashOfData = Arrays.copyOfRange(input, stop + hashedKey.length, input.length);
+
+            try {
+                System.out.println(new String(Arrays.copyOfRange(input, stop, stop + hashedKey.length), "UTF-8"));
+                System.out.println(new String(hashedKey, "UTF-8"));
+            } catch (Exception e){
+                System.out.println("Hora");
+            }
+            return Arrays.copyOfRange(data, 0, stop - 1);
+        }
+
+        /**
+         * Finds the index of the data inside the blob
+         *
+         * @param large the large array to search in
+         * @param small the small array to find inside the large array
+         * @return -1 if not found, or the index if it found
+         */
+        private int findIndexOfData(byte[] large, byte[] small) {
+            String bigStr = new String(large);
+            String smallStr = new String(small);
+
+            return bigStr.indexOf(smallStr);
+        }
+    }
 }
