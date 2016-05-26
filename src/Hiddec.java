@@ -47,14 +47,14 @@ public class Hiddec {
         Data data = new Data(input, hashedKey);
 
         if (data.data == null)
-            throw new IncorrectKeyException("Could not decryptFile file");
+            throw new IncorrectKeyException("Could not decrypt file");
 
         if (verify(data.data, data.hashOfData)) {
             System.out.println(new String(data.data, "UTF-8"));
             printToFile(data.data, outputFile);
         } else {
 
-            System.out.println("Could not be verified like a fgt boii");
+            System.out.println("Could not verify the file");
         }
     }
 
@@ -145,7 +145,7 @@ public class Hiddec {
 
         } catch (Exception e) {
             System.out.println("Error: Program shouldnt break here, but " +
-                    "for some reason the hash algorithm does not excist");
+                    "for some reason the hash algorithm does not exist");
             System.exit(0);
         }
         return hash;
@@ -170,7 +170,7 @@ public class Hiddec {
             decrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Stuff went wrong, bye friend, have a good life");
+            System.out.println("Decryption is broken");
             System.exit(0);
         }
 
@@ -194,15 +194,6 @@ public class Hiddec {
         Data(byte[] input, byte[] hashedKey) {
 
             data = data(input, hashedKey);
-        }
-
-        byte[] getData() {
-            return data;
-        }
-
-        byte[] getHashOfData() {
-
-            return hashOfData;
         }
 
         /**
@@ -236,6 +227,13 @@ public class Hiddec {
             return Arrays.copyOfRange(data, 0, stop);
         }
 
+        /**
+         * Finds the index of the patter in data
+         *
+         * @param data    the data to look in
+         * @param pattern the pattern to look for
+         * @return -1 if it fails, else the index
+         */
         private int indexOf(byte[] data, byte[] pattern) {
             int[] failure = computeFailure(pattern);
 
@@ -256,10 +254,6 @@ public class Hiddec {
             return -1;
         }
 
-        /**
-         * Computes the failure function using a boot-strapping process,
-         * where the pattern is matched against itself.
-         */
         private int[] computeFailure(byte[] pattern) {
             int[] failure = new int[pattern.length];
 
