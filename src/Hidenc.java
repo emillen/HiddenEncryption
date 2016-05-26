@@ -13,15 +13,18 @@ import java.util.Random;
  */
 public class Hidenc {
 
+    private String keyFile, offsetFile, inputFile, outputFile, templateFile, ctr;
+
+    private int offset, size;
+
     public static void main(String[] args) {
 
-        if (args.length != 3) {
-            System.out.println("Usage: Hidenc <datafile> <keyfile> <offsetfile> <savefile>");
-            return;
-        }
+        Hidenc hidenc = new Hidenc();
+        hidenc.checkArgs(args);
+
         try {
-            Hidenc hidenc = new Hidenc();
-            hidenc.encryptToFile(args[0], args[1], args[2]);
+            if (args.length == 4)
+                hidenc.encryptToFile(args[0], args[1], args[2]);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Tfw stuff dont work");
@@ -29,16 +32,68 @@ public class Hidenc {
     }
 
 
-    private void encryptToFile(String datafile, String keyfile, String saveFile) throws IOException {
-        byte[] data = getFileContents(datafile);
-        byte[] key = hexFileToArray(keyfile);
-        int offset = 288;
+    private void checkArgs(String[] args) throws IllegalArgumentException {
 
-        byte[] encrypted = encrypt(buildResult(data ,key, offset), key);
-        printToFile(encrypted, saveFile);
+        if ((keyFile = getArg(args, "--key=")) == null)
+            throw new IllegalArgumentException("no key was given");
+        if ((inputFile = getArg(args, "--input=")) == null)
+            throw new IllegalArgumentException("no input file was given");
+
+        if ((outputFile = getArg(args, "--output=")) == null)
+            throw new IllegalArgumentException("no output file was given");
+
+        String size = null;
+        if ((templateFile = getArg(args, "--template=")) != null && (size = getArg(args, "--size=")) != null)
+            throw new IllegalArgumentException("template and size cannot be " +
+                    "specified at the same time.");
+
+        if(templateFile == null && size == null)
+            throw new IllegalArgumentException("If template is not set, size needs to be set");
+
+        if (size != null)
+            this.size = Integer.parseInt(size);
+
+
+        setOffset(args);
+
+        ctr = getArg(args, "--ctr=");
     }
 
-    private byte[] buildResult(byte[] data,  byte[] key, int offset) {
+    private void setOffset(String[] args) {
+
+        String offsetString = getArg(args, "--offset=");
+        if (offsetString != null) {
+
+            offset = Integer.parseInt(offsetString);
+        } else {
+
+            Random rand = new Random();
+            offset = rand.nextInt();
+        }
+    }
+
+    private String getArg(String[] args, String string) {
+
+        for (String s : args) {
+            if (s.startsWith(string))
+                return s.replaceAll(string, "");
+
+        }
+
+        return null;
+    }
+
+    private void encryptToFile() throws IOException {
+        byte[] data = getFileContents(inputFile);
+        byte[] key = hexFileToArray(keyFile);
+        byte[] CTR = hexStringToByteArray(ctr);
+        int offset = 288;
+
+        byte[] encrypted = encrypt(buildResult(data, key, offset), key, CTR);
+        printToFile(encrypted, outputFile);
+    }
+
+    private byte[] buildResult(byte[] data, byte[] key, int offset) {
 
         byte[] result = new byte[1024];
         byte[] keyHash = hash(key);
@@ -155,10 +210,11 @@ public class Hidenc {
      * @param key        the bytes in the key
      * @return decrypted bytes
      */
-    private byte[] encrypt(byte[] inputBytes, byte[] key) {
+    private byte[] encrypt(byte[] inputBytes, byte[] key, byte[] CTR) {
 
         byte[] encrypted = null;
         try {
+
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
             SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
