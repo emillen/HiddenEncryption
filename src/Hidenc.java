@@ -15,7 +15,7 @@ public class Hidenc {
 
     public static void main(String[] args) {
 
-        if (args.length != 4) {
+        if (args.length != 3) {
             System.out.println("Usage: Hidenc <datafile> <keyfile> <offsetfile> <savefile>");
             return;
         }
@@ -32,22 +32,25 @@ public class Hidenc {
     private void encryptToFile(String datafile, String keyfile, String saveFile) throws IOException {
         byte[] data = getFileContents(datafile);
         byte[] key = hexFileToArray(keyfile);
-        byte[] blob = encrypt(data, key);
         int offset = 288;
 
-        printToFile(buildResult(blob, key, offset), saveFile);
+        byte[] encrypted = encrypt(buildResult(data ,key, offset), key);
+        printToFile(encrypted, saveFile);
     }
 
-    private byte[] buildResult(byte[] blob, byte[] key, int offset) {
+    private byte[] buildResult(byte[] data,  byte[] key, int offset) {
 
         byte[] result = new byte[1024];
         byte[] keyHash = hash(key);
+        byte[] dataHash = hash(data);
 
-        copyTo(result, blob, offset);
-        copyTo(result, keyHash, offset - keyHash.length);
-        copyTo(result, keyHash, offset + blob.length);
-        pad(result, 0, offset-keyHash.length);
-        pad(result, offset + blob.length, result.length);
+        copyTo(result, keyHash, offset);
+        copyTo(result, data, offset + keyHash.length);
+        copyTo(result, keyHash, offset + keyHash.length + data.length);
+        copyTo(result, data, offset + keyHash.length * 2 + data.length);
+        pad(result, 0, offset);
+        pad(result, offset + keyHash.length * 2 + data.length + dataHash.length, result.length);
+
         return result;
     }
 
@@ -57,15 +60,14 @@ public class Hidenc {
             large[i] = small[j];
     }
 
-    private void pad(byte[] blob, int start, int stop) {
+    private void pad(byte[] data, int start, int stop) {
 
         Random random = new Random();
 
-        for(int i = start; i < stop; i++){
+        for (int i = start; i < stop; i++) {
             byte rnd = (byte) random.nextInt();
-            blob[i] = rnd;
+            data[i] = rnd;
         }
-
     }
 
     /**
@@ -141,7 +143,6 @@ public class Hidenc {
      * @throws IOException when something went wrong with the output
      */
     private void printToFile(byte[] data, String outPutFile) throws IOException {
-
         FileOutputStream out = new FileOutputStream(outPutFile);
         out.write(data);
         out.close();
@@ -156,19 +157,19 @@ public class Hidenc {
      */
     private byte[] encrypt(byte[] inputBytes, byte[] key) {
 
-        byte[] decrypted = null;
+        byte[] encrypted = null;
         try {
             Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
             SecretKey secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-            decrypted = cipher.doFinal(inputBytes);
+            encrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Decryption is broken");
             System.exit(0);
         }
 
-        return decrypted;
+        return encrypted;
     }
 }
