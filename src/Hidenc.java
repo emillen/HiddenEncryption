@@ -1,5 +1,6 @@
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,20 +14,21 @@ import java.util.Random;
  */
 public class Hidenc {
 
-    private String keyFile, offsetFile, inputFile, outputFile, templateFile, ctr;
+    private String keyFile, inputFile, outputFile, templateFile, ctr;
 
     private int offset, size;
 
     public static void main(String[] args) {
 
-        Hidenc hidenc = new Hidenc();
-        hidenc.checkArgs(args);
 
         try {
-            if (args.length == 4)
-                hidenc.encryptToFile(args[0], args[1], args[2]);
+            Hidenc hidenc = new Hidenc();
+            hidenc.checkArgs(args);
+            System.out.println("\"" + hidenc.inputFile + "\"");
+            hidenc.encryptToFile();
         } catch (Exception e) {
             e.printStackTrace();
+            System.out.println(e.getMessage());
             System.out.println("Tfw stuff dont work");
         }
     }
@@ -42,17 +44,16 @@ public class Hidenc {
         if ((outputFile = getArg(args, "--output=")) == null)
             throw new IllegalArgumentException("no output file was given");
 
-        String size = null;
-        if ((templateFile = getArg(args, "--template=")) != null && (size = getArg(args, "--size=")) != null)
+        String size;
+        if ((size = getArg(args, "--size=")) != null && (templateFile = getArg(args, "--template=")) != null)
             throw new IllegalArgumentException("template and size cannot be " +
                     "specified at the same time.");
 
-        if(templateFile == null && size == null)
+        if (size == null && templateFile == null )
             throw new IllegalArgumentException("If template is not set, size needs to be set");
 
         if (size != null)
             this.size = Integer.parseInt(size);
-
 
         setOffset(args);
 
@@ -85,17 +86,22 @@ public class Hidenc {
 
     private void encryptToFile() throws IOException {
         byte[] data = getFileContents(inputFile);
-        byte[] key = hexFileToArray(keyFile);
+        byte[] key = hexStringToByteArray(keyFile);
         byte[] CTR = hexStringToByteArray(ctr);
-        int offset = 288;
 
-        byte[] encrypted = encrypt(buildResult(data, key, offset), key, CTR);
+        byte[] encrypted = encrypt(buildResult(data, key), key, CTR);
         printToFile(encrypted, outputFile);
     }
 
-    private byte[] buildResult(byte[] data, byte[] key, int offset) {
+    private byte[] buildResult(byte[] data, byte[] key) throws IOException {
 
-        byte[] result = new byte[1024];
+        byte[] result;
+
+        if (templateFile != null)
+            result = getFileContents(templateFile);
+        else
+            result = new byte[size];
+
         byte[] keyHash = hash(key);
         byte[] dataHash = hash(data);
 
@@ -103,9 +109,11 @@ public class Hidenc {
         copyTo(result, data, offset + keyHash.length);
         copyTo(result, keyHash, offset + keyHash.length + data.length);
         copyTo(result, dataHash, offset + keyHash.length * 2 + data.length);
-        pad(result, 0, offset);
-        pad(result, offset + keyHash.length * 2 + data.length + dataHash.length, result.length);
 
+        if (templateFile == null) {
+            pad(result, 0, offset);
+            pad(result, offset + keyHash.length * 2 + data.length + dataHash.length, result.length);
+        }
         return result;
     }
 
@@ -168,6 +176,9 @@ public class Hidenc {
      * @return a byte-array
      */
     private static byte[] hexStringToByteArray(String s) {
+        if (s == null)
+            return null;
+
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len - 1; i += 2) {
@@ -214,10 +225,19 @@ public class Hidenc {
 
         byte[] encrypted = null;
         try {
+            Cipher cipher;
+            if (CTR == null) {
+                cipher = Cipher.getInstance("AES/ECB/NoPadding");
+                SecretKey secretKey = new SecretKeySpec(key, "AES");
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
-            SecretKey secretKey = new SecretKeySpec(key, "AES");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            } else {
+
+                cipher = Cipher.getInstance("AES/CTR/NoPadding");
+                SecretKey secretKey = new SecretKeySpec(key, "AES");
+                IvParameterSpec ivSpec = new IvParameterSpec(CTR);
+                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
+            }
 
             encrypted = cipher.doFinal(inputBytes);
         } catch (Exception e) {
