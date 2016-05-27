@@ -24,7 +24,7 @@ public class Hiddec {
             System.out.println("Something went wrong with IO. Do you own all of the files, or does the files not exist?");
         } catch (IncorrectKeyException e) {
             e.printStackTrace();
-            System.out.println("The seems to not work");
+            System.out.println("Passsword seems to not work");
         } catch (IllegalArgumentException e) {
             System.out.println(e.getMessage());
         }
@@ -68,8 +68,6 @@ public class Hiddec {
         byte[] CTR = hexStringToByteArray(ctr);
         byte[] input = decrypt(getFileContents(inputFile), key, CTR);
         byte[] hashedKey = hash(key);
-
-        System.out.println(new String(input, "UTF-8"));
 
         Data data = new Data(input, hashedKey);
 
