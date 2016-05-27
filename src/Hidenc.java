@@ -88,11 +88,11 @@ public class Hidenc {
         byte[] key = hexStringToByteArray(keyFile);
         byte[] CTR = hexStringToByteArray(ctr);
 
-        byte[] encrypted = encrypt(buildResult(data, key), key, CTR);
+        byte[] encrypted = buildResult(data, key, CTR);
         printToFile(encrypted, outputFile);
     }
 
-    private byte[] buildResult(byte[] data, byte[] key) throws IOException {
+    private byte[] buildResult(byte[] data, byte[] key, byte[] CTR) throws IOException {
 
         byte[] result;
 
@@ -106,11 +106,14 @@ public class Hidenc {
 
         byte[] keyHash = hash(key);
         byte[] dataHash = hash(data);
+        byte[] blob = new byte[data.length + keyHash.length *2 + dataHash.length];
 
-        copyTo(result, keyHash, offset);
-        copyTo(result, data, offset + keyHash.length);
-        copyTo(result, keyHash, offset + keyHash.length + data.length);
-        copyTo(result, dataHash, offset + keyHash.length * 2 + data.length);
+        copyTo(blob, keyHash, 0);
+        copyTo(blob, data, keyHash.length);
+        copyTo(blob, keyHash, keyHash.length + data.length);
+        copyTo(blob, dataHash, keyHash.length * 2 + data.length);
+
+        copyTo(result, encrypt(blob, key, CTR), offset);
 
         if (templateFile == null) {
             pad(result, 0, offset);
