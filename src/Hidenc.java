@@ -49,7 +49,7 @@ public class Hidenc {
             throw new IllegalArgumentException("template and size cannot be " +
                     "specified at the same time.");
 
-        if (size == null && templateFile == null )
+        if (size == null && templateFile == null)
             throw new IllegalArgumentException("If template is not set, size needs to be set");
 
         if (size != null)
@@ -101,13 +101,13 @@ public class Hidenc {
         else
             result = new byte[size];
 
-        if(offset == -1)
-            while((offset = new Random().nextInt(result.length) % 16) != 0);
+        if (offset == -1)
+            while ((offset = new Random().nextInt(result.length) % 16) != 0) ;
 
 
         byte[] keyHash = hash(key);
         byte[] dataHash = hash(data);
-        byte[] blob = new byte[data.length + keyHash.length *2 + dataHash.length];
+        byte[] blob = new byte[data.length + keyHash.length * 2 + dataHash.length];
 
         copyTo(blob, keyHash, 0);
         copyTo(blob, data, keyHash.length);
@@ -226,7 +226,6 @@ public class Hidenc {
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
             } else {
-                System.out.println("jag är här boii");
                 cipher = Cipher.getInstance("AES/CTR/NoPadding");
                 SecretKey secretKey = new SecretKeySpec(key, "AES");
                 IvParameterSpec ivSpec = new IvParameterSpec(CTR);

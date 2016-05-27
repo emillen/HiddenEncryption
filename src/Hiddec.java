@@ -4,7 +4,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -230,12 +229,9 @@ public class Hiddec {
             int stop;
             byte[] data;
 
-            System.out.println("Hejsan");
             // find starting position
             if ((start = indexOf(input, key)) == -1)
                 return null;
-
-            System.out.println("Hejsan2");
 
             start += key.length;
 
