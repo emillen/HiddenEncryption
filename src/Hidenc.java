@@ -24,12 +24,12 @@ public class Hidenc {
         try {
             Hidenc hidenc = new Hidenc();
             hidenc.checkArgs(args);
-            System.out.println("\"" + hidenc.inputFile + "\"");
             hidenc.encryptToFile();
         } catch (Exception e) {
             e.printStackTrace();
+
+            System.out.println("Something went wrong:\n");
             System.out.println(e.getMessage());
-            System.out.println("Tfw stuff dont work");
         }
     }
 
@@ -68,8 +68,7 @@ public class Hidenc {
             offset = Integer.parseInt(offsetString);
         } else {
 
-            Random rand = new Random();
-            offset = rand.nextInt();
+            offset = -1;
         }
     }
 
@@ -101,6 +100,9 @@ public class Hidenc {
             result = getFileContents(templateFile);
         else
             result = new byte[size];
+
+        if(offset == -1)
+            offset = new Random().nextInt(result.length);
 
         byte[] keyHash = hash(key);
         byte[] dataHash = hash(data);
@@ -240,6 +242,7 @@ public class Hidenc {
             }
 
             encrypted = cipher.doFinal(inputBytes);
+
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Decryption is broken");
