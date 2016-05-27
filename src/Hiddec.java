@@ -4,6 +4,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -229,25 +230,63 @@ public class Hiddec {
             // find starting position
             if ((start = indexOf(input, key)) == -1)
                 return null;
+
             System.out.println("Hejsan2");
 
-            data = Arrays.copyOfRange(input, start + key.length, input.length);
+            start += key.length;
+
+            data = Arrays.copyOfRange(input, start, input.length);
+
 
             // find stop position
-            if ((stop = indexOf(data, key)) == -1)
+            if ((data = getData(data, key)) == null)
                 return null;
 
+            stop = start + data.length;
+
             // the last part of the input
-            hashOfData = Arrays.copyOfRange(data, stop + key.length, data.length);
+            hashOfData = Arrays.copyOfRange(input, stop + key.length, input.length);
+
             try {
                 hashOfData = cipher.doFinal(Arrays.copyOfRange(hashOfData, 0, 16));
             } catch (Exception e) {
                 System.out.println("Decryption broken");
                 System.exit(0);
             }
+            try{
+            System.out.println(new String(data, "UTF-8"));} catch (Exception e){}
+            return data;
+        }
 
-            data = Arrays.copyOfRange(data, 0, stop);
-            return decrypt(data, key, 0, data.length);
+
+        private byte[] getData(byte[] input, byte[] key) {
+            byte[] hashedKey = hash(key);
+            byte[] data = null;
+
+
+            for (int i = 0; i <= input.length - 16; i += 16) {
+                byte[] decryptedBlock = decrypt(input, i, i + 16);
+                if (Arrays.equals(decryptedBlock, hashedKey))
+                    return Arrays.copyOfRange(input, 0, i);
+                else
+                    data = concat(data, decryptedBlock);
+            }
+
+            return null;
+        }
+
+        private byte[] concat(byte[] a, byte[] b){
+
+            if(a == null)
+                return Arrays.copyOfRange(b, 0, b.length);
+            if(b == null)
+                return Arrays.copyOfRange(a, 0, a.length);
+
+            byte[] newArray = new byte[a.length + b.length];
+
+            System.arraycopy(a, 0, newArray, 0, a.length);
+            System.arraycopy(b, 0, newArray, a.length, b.length);
+            return newArray;
         }
 
         /**
@@ -259,10 +298,12 @@ public class Hiddec {
          */
         private int indexOf(byte[] data, byte[] key) {
             byte[] hashedKey = hash(key);
-            for (int i = 0; i < data.length - 16; i += 16) {
-                if (Arrays.equals(decrypt(data, key, i, i + 16), hashedKey))
+
+            for (int i = 0; i <= data.length - 16; i += 16) {
+                if (Arrays.equals(decrypt(data, i, i + 16), hashedKey))
                     return i;
             }
+
             return -1;
         }
 
@@ -270,10 +311,9 @@ public class Hiddec {
          * Decrypts the input bytes
          *
          * @param inputBytes the bytes to be decrypted
-         * @param key        the bytes in the key
          * @return decrypted bytes
          */
-        private byte[] decrypt(byte[] inputBytes, byte[] key, int from, int to) {
+        private byte[] decrypt(byte[] inputBytes, int from, int to) {
 
             byte[] decrypted = null;
             try {
@@ -286,23 +326,5 @@ public class Hiddec {
             }
             return decrypted;
         }
-
-        private int[] computeFailure(byte[] pattern) {
-            int[] failure = new int[pattern.length];
-
-            int j = 0;
-            for (int i = 1; i < pattern.length; i++) {
-                while (j > 0 && pattern[j] != pattern[i]) {
-                    j = failure[j - 1];
-                }
-                if (pattern[j] == pattern[i]) {
-                    j++;
-                }
-                failure[i] = j;
-            }
-
-            return failure;
-        }
-
     }
 }
