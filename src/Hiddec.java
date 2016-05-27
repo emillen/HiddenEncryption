@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class Hiddec {
 
     private String key, ctr, inputFile, outputFile;
-
+    IvParameterSpec CTR;
     public static void main(String[] args) {
 
         try {
@@ -65,8 +65,8 @@ public class Hiddec {
     private void decryptFile() throws IOException, IncorrectKeyException {
 
         byte[] key = hexStringToByteArray(this.key);
-        byte[] CTR = hexStringToByteArray(ctr);
-        byte[] input = decrypt(getFileContents(inputFile), key, CTR);
+        CTR = new IvParameterSpec(hexStringToByteArray(ctr));
+        byte[] input = getFileContents(inputFile);
         byte[] hashedKey = hash(key);
 
         Data data = new Data(input, hashedKey);
@@ -185,7 +185,7 @@ public class Hiddec {
      * @param key        the bytes in the key
      * @return decrypted bytes
      */
-    private byte[] decrypt(byte[] inputBytes, byte[] key, byte[] CTR) {
+    private byte[] decrypt(byte[] inputBytes, byte[] key, int from, int to) {
 
         byte[] decrypted = null;
         try {
@@ -197,12 +197,13 @@ public class Hiddec {
 
             } else {
                 cipher = Cipher.getInstance("AES/CTR/NoPadding");
-                IvParameterSpec ivSpec = new IvParameterSpec(CTR);
-                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+
+
+                cipher.init(Cipher.DECRYPT_MODE, secretKey, CTR);
             }
 
-
-            decrypted = cipher.doFinal(inputBytes);
+            byte[] copyOfRange = Arrays.copyOfRange(inputBytes, from, to);
+            decrypted = cipher.doFinal(copyOfRange);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Decryption is broken");
