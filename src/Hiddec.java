@@ -238,7 +238,7 @@ public class Hiddec {
             data = Arrays.copyOfRange(input, start, input.length);
 
 
-            // find stop position
+            // find data
             if ((data = getData(data, key)) == null)
                 return null;
 
@@ -253,8 +253,6 @@ public class Hiddec {
                 System.out.println("Decryption broken");
                 System.exit(0);
             }
-            try{
-            System.out.println(new String(data, "UTF-8"));} catch (Exception e){}
             return data;
         }
 
@@ -263,11 +261,10 @@ public class Hiddec {
             byte[] hashedKey = hash(key);
             byte[] data = null;
 
-
             for (int i = 0; i <= input.length - 16; i += 16) {
                 byte[] decryptedBlock = decrypt(input, i, i + 16);
                 if (Arrays.equals(decryptedBlock, hashedKey))
-                    return Arrays.copyOfRange(input, 0, i);
+                    return data;
                 else
                     data = concat(data, decryptedBlock);
             }
