@@ -102,7 +102,8 @@ public class Hidenc {
             result = new byte[size];
 
         if(offset == -1)
-            offset = new Random().nextInt(result.length);
+            while((offset = new Random().nextInt(result.length) % 16) != 0);
+
 
         byte[] keyHash = hash(key);
         byte[] dataHash = hash(data);
@@ -116,6 +117,7 @@ public class Hidenc {
         copyTo(result, encrypt(blob, key, CTR), offset);
 
         if (templateFile == null) {
+            System.out.println("ingen tempfile");
             pad(result, 0, offset);
             pad(result, offset + keyHash.length * 2 + data.length + dataHash.length, result.length);
         }

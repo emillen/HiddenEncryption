@@ -192,12 +192,17 @@ public class Hiddec {
 
         private byte[] data;
         private byte[] hashOfData;
-
+        private SecretKey secretKey;
 
         Data(byte[] input, byte[] key) {
 
+            secretKey = new SecretKeySpec(key, "AES");
+            data = data(input, key);
+        }
+
+        private void initCipher() {
+
             try {
-                SecretKey secretKey = new SecretKeySpec(key, "AES");
                 if (CTR == null) {
                     cipher = Cipher.getInstance("AES/ECB/NoPadding");
                     cipher.init(Cipher.DECRYPT_MODE, secretKey);
@@ -209,7 +214,6 @@ public class Hiddec {
                 System.out.println("Algorithm was not found");
                 System.exit(0);
             }
-            data = data(input, key);
         }
 
         /**
@@ -272,11 +276,11 @@ public class Hiddec {
             return null;
         }
 
-        private byte[] concat(byte[] a, byte[] b){
+        private byte[] concat(byte[] a, byte[] b) {
 
-            if(a == null)
+            if (a == null)
                 return Arrays.copyOfRange(b, 0, b.length);
-            if(b == null)
+            if (b == null)
                 return Arrays.copyOfRange(a, 0, a.length);
 
             byte[] newArray = new byte[a.length + b.length];
@@ -297,6 +301,9 @@ public class Hiddec {
             byte[] hashedKey = hash(key);
 
             for (int i = 0; i <= data.length - 16; i += 16) {
+
+                initCipher();
+
                 if (Arrays.equals(decrypt(data, i, i + 16), hashedKey))
                     return i;
             }
