@@ -139,19 +139,6 @@ public class Hidenc {
     }
 
     /**
-     * Reads a file with hex-numbers and returns a byte array representing that file
-     *
-     * @param file the name of the file to read
-     * @return a byte array of hex numbers
-     * @throws IOException when the file could not be read
-     */
-    private byte[] hexFileToArray(String file) throws IOException {
-
-        String hexString = new String(getFileContents(file), "UTF-8");
-        return hexStringToByteArray(hexString);
-    }
-
-    /**
      * Hashses the input bytes using MD5
      *
      * @param inputBytes the bytes to hash
@@ -237,7 +224,7 @@ public class Hidenc {
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey);
 
             } else {
-
+                System.out.println("jag är här boii");
                 cipher = Cipher.getInstance("AES/CTR/NoPadding");
                 SecretKey secretKey = new SecretKeySpec(key, "AES");
                 IvParameterSpec ivSpec = new IvParameterSpec(CTR);

@@ -12,7 +12,9 @@ import java.util.Arrays;
 public class Hiddec {
 
     private String key, ctr, inputFile, outputFile;
-    IvParameterSpec CTR;
+    private IvParameterSpec CTR = null;
+    private Cipher cipher;
+
     public static void main(String[] args) {
 
         try {
@@ -35,8 +37,8 @@ public class Hiddec {
         if ((key = getArg(args, "--key=")) == null)
             throw new IllegalArgumentException("Key is not set");
 
-        if ((ctr = getArg(args, "--ctr=")) == null)
-            throw new IllegalArgumentException("ctr is not set");
+        ctr = getArg(args, "--ctr=");
+
 
         if ((inputFile = getArg(args, "--input=")) == null)
             throw new IllegalArgumentException("input file is not set");
@@ -65,11 +67,11 @@ public class Hiddec {
     private void decryptFile() throws IOException, IncorrectKeyException {
 
         byte[] key = hexStringToByteArray(this.key);
-        CTR = new IvParameterSpec(hexStringToByteArray(ctr));
+        if (ctr != null)
+            CTR = new IvParameterSpec(hexStringToByteArray(ctr));
         byte[] input = getFileContents(inputFile);
-        byte[] hashedKey = hash(key);
 
-        Data data = new Data(input, hashedKey);
+        Data data = new Data(input, key);
 
         if (data.data == null)
             throw new IncorrectKeyException("Could not decrypt file");
@@ -178,41 +180,6 @@ public class Hiddec {
     }
 
 
-    /**
-     * Decrypts the input bytes
-     *
-     * @param inputBytes the bytes to be decrypted
-     * @param key        the bytes in the key
-     * @return decrypted bytes
-     */
-    private byte[] decrypt(byte[] inputBytes, byte[] key, int from, int to) {
-
-        byte[] decrypted = null;
-        try {
-            Cipher cipher;
-            SecretKey secretKey = new SecretKeySpec(key, "AES");
-            if (CTR == null) {
-                cipher = Cipher.getInstance("AES/ECB/NoPadding");
-                cipher.init(Cipher.DECRYPT_MODE, secretKey);
-
-            } else {
-                cipher = Cipher.getInstance("AES/CTR/NoPadding");
-
-
-                cipher.init(Cipher.DECRYPT_MODE, secretKey, CTR);
-            }
-
-            byte[] copyOfRange = Arrays.copyOfRange(inputBytes, from, to);
-            decrypted = cipher.doFinal(copyOfRange);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Decryption is broken");
-            System.exit(0);
-        }
-        return decrypted;
-    }
-
-
     private class IncorrectKeyException extends Exception {
 
         IncorrectKeyException(String s) {
@@ -226,9 +193,22 @@ public class Hiddec {
         private byte[] hashOfData;
 
 
-        Data(byte[] input, byte[] hashedKey) {
+        Data(byte[] input, byte[] key) {
 
-            data = data(input, hashedKey);
+            try {
+                SecretKey secretKey = new SecretKeySpec(key, "AES");
+                if (CTR == null) {
+                    cipher = Cipher.getInstance("AES/ECB/NoPadding");
+                    cipher.init(Cipher.DECRYPT_MODE, secretKey);
+                } else {
+                    cipher = Cipher.getInstance("AES/CTR/NoPadding");
+                    cipher.init(Cipher.DECRYPT_MODE, secretKey, CTR);
+                }
+            } catch (Exception e) {
+                System.out.println("Algorithm was not found");
+                System.exit(0);
+            }
+            data = data(input, key);
         }
 
         /**
@@ -236,59 +216,75 @@ public class Hiddec {
          * A side effect is that the input array is shortened to the last part
          * that contains the H(data)
          *
-         * @param input     the input to search in
-         * @param hashedKey the hashed key
+         * @param input the input to search in
+         * @param key   the key
          * @return null if data could not be found, else the data
          */
-        private byte[] data(byte[] input, byte[] hashedKey) {
+        private byte[] data(byte[] input, byte[] key) {
             int start;
             int stop;
             byte[] data;
 
-
+            System.out.println("Hejsan");
             // find starting position
-            if ((start = indexOf(input, hashedKey)) == -1)
+            if ((start = indexOf(input, key)) == -1)
                 return null;
+            System.out.println("Hejsan2");
 
-
-            data = Arrays.copyOfRange(input, start + hashedKey.length, input.length);
+            data = Arrays.copyOfRange(input, start + key.length, input.length);
 
             // find stop position
-            if ((stop = indexOf(data, hashedKey)) == -1)
+            if ((stop = indexOf(data, key)) == -1)
                 return null;
 
             // the last part of the input
-            hashOfData = Arrays.copyOfRange(data, stop + hashedKey.length, data.length);
-            hashOfData = Arrays.copyOfRange(hashOfData, 0, 16);
+            hashOfData = Arrays.copyOfRange(data, stop + key.length, data.length);
+            try {
+                hashOfData = cipher.doFinal(Arrays.copyOfRange(hashOfData, 0, 16));
+            } catch (Exception e) {
+                System.out.println("Decryption broken");
+                System.exit(0);
+            }
 
-            return Arrays.copyOfRange(data, 0, stop);
+            data = Arrays.copyOfRange(data, 0, stop);
+            return decrypt(data, key, 0, data.length);
         }
 
         /**
-         * Finds the index of the patter in data
+         * Finds the index of the patter in decrypted data
          *
-         * @param data    the data to look in
-         * @param pattern the pattern to look for
+         * @param data the data to decrypt and look in
+         * @param key  the pattern to look for
          * @return -1 if it fails, else the index
          */
-        private int indexOf(byte[] data, byte[] pattern) {
-            int[] failure = computeFailure(pattern);
-
-            int j = 0;
-            if (data.length == 0) return -1;
-
-            for (int i = 0; i < data.length; i++) {
-                while (j > 0 && pattern[j] != data[i]) {
-                    j = failure[j - 1];
-                }
-                if (pattern[j] == data[i]) {
-                    j++;
-                }
-                if (j == pattern.length) {
-                    return i - pattern.length + 1;
-                }
+        private int indexOf(byte[] data, byte[] key) {
+            byte[] hashedKey = hash(key);
+            for (int i = 0; i < data.length - 16; i += 16) {
+                if (Arrays.equals(decrypt(data, key, i, i + 16), hashedKey))
+                    return i;
             }
             return -1;
+        }
+
+        /**
+         * Decrypts the input bytes
+         *
+         * @param inputBytes the bytes to be decrypted
+         * @param key        the bytes in the key
+         * @return decrypted bytes
+         */
+        private byte[] decrypt(byte[] inputBytes, byte[] key, int from, int to) {
+
+            byte[] decrypted = null;
+            try {
+                byte[] copyOfRange = Arrays.copyOfRange(inputBytes, from, to);
+                decrypted = cipher.update(copyOfRange);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Decryption is broken");
+                System.exit(0);
+            }
+            return decrypted;
         }
 
         private int[] computeFailure(byte[] pattern) {
